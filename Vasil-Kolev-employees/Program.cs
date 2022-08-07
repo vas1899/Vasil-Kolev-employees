@@ -7,9 +7,68 @@ namespace ConsoleApp5
     {
         static void Main(string[] args)
         {
-            string fileName = "data.csv";
+            string path = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Data"));
+            string format = "*.csv";
+            Console.WriteLine($"In Directory {path}\nFiles:");
+
+            FileInfo[] csvFiles = GetFilesInDirectory(path, format);
+            PrintAllFiles(csvFiles);
+
+            int chosenFileIndex = GetUserChosenFileIndex();
+
+
+            string fileName = csvFiles[chosenFileIndex].Name;
+
+            List<EmployeeWorkProject> employeeWorkonProjectlist = ExtractDataFromCSVFile(fileName, path);
+
+
+            List<PairEmployeesTimeSpentTogetherOnProject> employeesTimeSpentOnProjectList = GetPairEmployeesTimeSpentTogetherOnProjectList(employeeWorkonProjectlist);
+            PrintListPairEmployeesTimeSpentOnProjectList(employeesTimeSpentOnProjectList);
+        }
+
+        public static void PrintListPairEmployeesTimeSpentOnProjectList(List<PairEmployeesTimeSpentTogetherOnProject> employeesTimeSpentOnProjectList)
+        {
+            Console.WriteLine("\n\nEmployee ID #1\t Employee ID #2  Project ID\t Days worked");
+            foreach (var pairEmployees in employeesTimeSpentOnProjectList)
+            {
+                Console.WriteLine($"{pairEmployees.EmpId1}\t \t {pairEmployees.EmpId2}\t\t  {pairEmployees.ProjectId}\t\t  {pairEmployees.TimeSpent.Days}");
+            }
+        }
+        private static int GetUserChosenFileIndex()
+        {
+            int fileNumberInt;
+            string fileNumberString;
+            do
+            {
+                Console.WriteLine("\n\nPlease enter the file number:\n");
+                fileNumberString = Console.ReadLine() ?? "";
+
+            }
+            while (!int.TryParse(fileNumberString, out fileNumberInt));
+
+            return fileNumberInt - 1;
+        }
+
+        private static void PrintAllFiles(FileInfo[] files)
+        {
+            int length = files.Length;
+            for (int i = 0; i < length; i++)
+            {
+                Console.WriteLine(i + 1 + ". " + files[i].Name);
+            }
+        }
+
+        private static FileInfo[] GetFilesInDirectory(string path, string format)
+        {
+            DirectoryInfo directory = new DirectoryInfo(path);
+            FileInfo[] files = directory.GetFiles(format);
+
+            return files;
+        }
+
+        private static List<EmployeeWorkProject> ExtractDataFromCSVFile(string fileName, string path)
+        {
             List<EmployeeWorkProject> employeeWorkonProjectlist = new List<EmployeeWorkProject>();
-            string path = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\.."));
             string filePath = Path.Combine(path, fileName);
             using (var reader = new StreamReader(filePath))
             {
@@ -31,8 +90,7 @@ namespace ConsoleApp5
                     });
                 }
             }
-            List<PairEmployeesTimeSpentTogetherOnProject> employeesTimeSpentOnProjectList = GetPairEmployeesTimeSpentTogetherOnProjectList(employeeWorkonProjectlist);
-
+            return employeeWorkonProjectlist;
         }
 
         private static List<PairEmployeesTimeSpentTogetherOnProject> GetPairEmployeesTimeSpentTogetherOnProjectList(List<EmployeeWorkProject> list)
@@ -43,7 +101,6 @@ namespace ConsoleApp5
             {
                 for (int j = i + 1; j < length; j++)
                 {
-
                     if (list[i].EmpID != list[j].EmpID && list[i].ProjectID == list[j].ProjectID)
                     {
                         TimeSpan timeSpentTogether = CalculateTimeSpentTogetherOnProject(list[i].DateFrom, list[i].DateTo, list[j].DateFrom, list[j].DateTo);
